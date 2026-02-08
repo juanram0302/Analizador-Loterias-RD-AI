@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analizador Pro Loterías RD</title>
+    <meta name="description" content="Sistema inteligente de análisis de loterías dominicanas. Confluencia, probabilidad matemática, volteos y predicciones.">
+    <meta name="theme-color" content="#0a0e17">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/svg+xml" href="img/favicon.svg">
+    <link rel="apple-touch-icon" href="img/icon-192.png">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-logo">🎯</div>
+            <h1>Analizador Pro Loterías RD</h1>
+            <p>Sistema Inteligente de Análisis • Confluencia • Probabilidad Matemática</p>
+        </header>
+
+        <!-- Date Selector -->
+        <div class="date-bar">
+            <div class="date-item">
+                <label for="dateToday">📅 Fecha de Hoy</label>
+                <input type="date" id="dateToday" class="date-input">
+            </div>
+            <div class="date-item">
+                <label for="dateYesterday">📅 Fecha de Ayer</label>
+                <input type="date" id="dateYesterday" class="date-input">
+            </div>
+        </div>
+
+        <!-- Paste Section -->
+        <div class="paste-section">
+            <h3>📋 PEGAR RESULTADOS (Automático)</h3>
+            <div class="paste-toggle">
+                <button class="toggle-btn active" onclick="switchPasteTab('today', this)">Hoy</button>
+                <button class="toggle-btn" onclick="switchPasteTab('yesterday', this)">Ayer</button>
+            </div>
+            <textarea class="paste-area" id="pasteAreaToday" placeholder="Pega aquí los resultados de HOY copiados de quinielasrd.com...
+
+Ejemplo:
+New York 3:30
+17 59 64
+Gana Más
+22 41 07"></textarea>
+            <textarea class="paste-area" id="pasteAreaYesterday" style="display:none" placeholder="Pega aquí los resultados de AYER..."></textarea>
+            <div class="btn-row">
+                <button class="btn btn-primary" onclick="parseResults()">⚡ Procesar Automático</button>
+                <button class="btn btn-secondary" onclick="clearAll()">🗑️ Limpiar Todo</button>
+                <button class="btn btn-secondary" onclick="loadExample()">📥 Cargar Ejemplo</button>
+            </div>
+        </div>
+
+        <div id="statusMessage"></div>
+
+        <!-- Tabs -->
+        <div class="tabs">
+            <button class="tab-btn active" onclick="showTab('manana', this)">🌅 Mañana</button>
+            <button class="tab-btn" onclick="showTab('dia', this)">☀️ Día</button>
+            <button class="tab-btn" onclick="showTab('tarde', this)">🌆 Tarde</button>
+            <button class="tab-btn" onclick="showTab('noche', this)">🌙 Noche</button>
+            <button class="tab-btn" onclick="showTab('all', this)">📊 Todas</button>
+        </div>
+
+        <!-- Day toggle for cards -->
+        <div class="day-toggle" id="dayToggle">
+            <button class="day-btn active" onclick="switchDayView('today', this)">🔵 Hoy</button>
+            <button class="day-btn" onclick="switchDayView('yesterday', this)">⚪ Ayer</button>
+            <button class="day-btn" onclick="switchDayView('both', this)">🟡 Ambos</button>
+        </div>
+
+        <!-- Lottery Sections -->
+        <div id="lotteryContainer"></div>
+
+        <!-- API Key Section -->
+        <div class="ai-config-section">
+            <div class="ai-config-header" onclick="toggleAIConfig()">
+                <span>🤖 ANÁLISIS CON IA (Claude)</span>
+                <span class="ai-toggle-icon" id="aiToggleIcon">▼</span>
+            </div>
+            <div class="ai-config-body" id="aiConfigBody" style="display:none;">
+                <p class="ai-config-desc">Conecta la IA de Claude para un análisis más profundo: detecta patrones ocultos, ciclos, y genera predicciones reforzadas con inteligencia artificial.</p>
+                <div class="ai-key-row">
+                    <input type="password" id="aiApiKey" class="ai-key-input" placeholder="sk-ant-api03-...">
+                    <button class="btn btn-ai-save" onclick="saveAIKey()">💾</button>
+                </div>
+                <div id="aiKeyStatus" class="ai-key-status"></div>
+            </div>
+        </div>
+
+        <!-- Analyze Buttons -->
+        <div class="analyze-section">
+            <button class="btn btn-analyze" onclick="analyzeAll()">
+                <span class="btn-icon">🔬</span>
+                ANALIZAR Y GENERAR PREDICCIONES
+            </button>
+            <button class="btn btn-analyze-ai" onclick="analyzeWithAI()" id="btnAnalyzeAI">
+                <span class="btn-icon">🤖</span>
+                ANÁLISIS REFORZADO CON IA
+            </button>
+        </div>
+
+        <!-- Results Section -->
+        <div class="results-section" id="resultsSection">
+            <div class="results-header">
+                <h2>📊 ANÁLISIS COMPLETO</h2>
+                <p>Basado en <span id="totalLotteries">0</span> sorteos analizados</p>
+            </div>
+
+            <!-- Stats Row -->
+            <div class="stats-row" id="statsRow"></div>
+
+            <!-- Target Lotteries Section -->
+            <div class="target-section">
+                <h3>🎯 TUS JUGADAS — GANA MÁS & LOTERÍA NACIONAL</h3>
+                <div class="target-grid" id="targetGrid"></div>
+            </div>
+
+            <!-- Frequency Analysis -->
+            <div class="frequency-section">
+                <h3>🔥 MAPA DE CALOR — FRECUENCIA DE NÚMEROS</h3>
+                <div class="freq-grid" id="freqGrid"></div>
+
+                <h3 style="margin-top: 25px;">📍 ANÁLISIS POR POSICIÓN</h3>
+                <div class="position-grid" id="positionGrid"></div>
+            </div>
+
+            <!-- Pairs Analysis -->
+            <div class="frequency-section">
+                <h3>🔗 PARES FRECUENTES (Aparecen juntos)</h3>
+                <div class="pairs-grid" id="pairsGrid"></div>
+            </div>
+
+            <!-- Predictions Grid -->
+            <div class="analysis-grid" id="analysisGrid"></div>
+
+            <!-- AI Analysis Section -->
+            <div class="ai-results-section" id="aiResultsSection" style="display:none;">
+                <div class="ai-results-header">
+                    <h3>🤖 ANÁLISIS REFORZADO CON IA</h3>
+                    <div class="ai-pulse"></div>
+                </div>
+                <div id="aiAnalysisContent"></div>
+            </div>
+
+            <!-- Disclaimer -->
+            <div class="disclaimer">
+                ⚠️ Las loterías son 100% azar. Este análisis es para entretenimiento y planificación basado en patrones estadísticos. Juega responsable.
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>Analizador Pro Loterías RD v2.0 — Herramienta de análisis estadístico</p>
+            <p>Juega responsable • No inviertas lo que no puedes perder</p>
+        </footer>
+    </div>
+
+    <script src="js/lotteries.js"></script>
+    <script src="js/parser.js"></script>
+    <script src="js/analyzer.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/ai.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
