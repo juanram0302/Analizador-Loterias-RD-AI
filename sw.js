@@ -1,0 +1,69 @@
+const CACHE_NAME = 'loterias-rd-v2.0';
+const ASSETS_TO_CACHE = [
+    '/',
+    '/index.html',
+    '/css/styles.css',
+    '/js/lotteries.js',
+    '/js/parser.js',
+    '/js/analyzer.js',
+    '/js/ui.js',
+    '/js/ai.js',
+    '/js/app.js',
+    '/img/favicon.svg',
+    '/img/icon-192.png',
+    '/img/icon-512.png',
+    '/manifest.json'
+];
+
+// Install: cache all core assets
+self.addEventListener('install', event => {
+    event.waitUntil(
+        caches.open(CACHE_NAME).then(cache => {
+            return cache.addAll(ASSETS_TO_CACHE);
+        })
+    );
+    self.skipWaiting();
+});
+
+// Activate: clean old caches
+self.addEventListener('activate', event => {
+    event.waitUntil(
+        caches.keys().then(keys => {
+            return Promise.all(
+                keys.filter(key => key !== CACHE_NAME).map(key => caches.delete(key))
+            );
+        })
+    );
+    self.clients.claim();
+});
+
+// Fetch: network first, fallback to cache
+self.addEventListener('fetch', event => {
+    // Skip non-GET requests
+    if (event.request.method !== 'GET') return;
+
+    // For navigation requests (HTML pages), always try network first then fallback to cached index.html
+    if (event.request.mode === 'navigate') {
+        event.respondWith(
+            fetch(event.request)
+                .catch(() => caches.match('/index.html'))
+        );
+        return;
+    }
+
+    // For other assets: network first, then cache
+    event.respondWith(
+        fetch(event.request)
+            .then(response => {
+                // Cache successful responses
+                if (response.ok) {
+                    const responseClone = response.clone();
+                    caches.open(CACHE_NAME).then(cache => {
+                        cache.put(event.request, responseClone);
+                    });
+                }
+                return response;
+            })
+            .catch(() => caches.match(event.request))
+    );
+});
